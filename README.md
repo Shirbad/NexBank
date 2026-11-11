@@ -70,7 +70,8 @@ The root Maven build enforces at least 70% JaCoCo line coverage for each top-lev
 ## Current completion status
 
 - Implemented and locally verified: registration/login/rotating refresh/logout blacklist; gateway JWT verification and Redis rate limits; customer/teller/compliance/admin role rules and ownership checks; account deposits, withdrawals, ledger history, and locked transactional transfers; 24-hour Redis idempotency result cache with PostgreSQL key serialization; cached account reads with mutation/fraud-freeze eviction; Kafka outboxes, consumers, retries and DLTs; multi-signal fraud checks and optional masked-data AI explanation; notification/audit log entries; Swagger UI; Docker Compose; GitHub CI, GHCR image publishing, and a 70% JaCoCo service-class gate.
-- Remaining to prove or configure: run the four PostgreSQL Testcontainers tests with Docker Desktop, add Kafka/Redis integration tests, publish and confirm green GitHub Actions runs, and configure a real VM/domain/secrets for HTTPS deployment and a demo video. No production URL or video is claimed yet.
+- Verified: local `verify` completed with 39 tests passing and the four PostgreSQL Testcontainers tests skipped because Docker was unavailable to this workspace; the latest GitHub Java 21 CI run completed successfully, and all five GHCR image builds published successfully. The CI workflow runs the Testcontainers cases on GitHub's Docker-enabled runner.
+- Still to complete outside this code workspace: add Kafka/Redis integration tests, configure a real VM/domain and deployment secrets, and record the demo video. The deployment workflow is ready but disabled until `DEPLOY_ENABLED=true` and its secrets are configured. No production URL or demo video is claimed.
 - NexBank is an API backend, not a web banking screen. Use Swagger UI, PowerShell, or Postman at `http://localhost:8080`.
 
 ## Key design choices
@@ -95,8 +96,8 @@ The root Maven build enforces at least 70% JaCoCo line coverage for each top-lev
 ## Production hardening still required
 
 - Add retention/cleanup policies for idempotency and processed-event records.
-- Add Kafka/Redis Testcontainers integration coverage and run the PostgreSQL concurrency tests on a Docker-enabled runner. Unit tests do not replace these integration checks.
-- Confirm the GitHub Actions CI and GHCR image workflow after push, then configure deployment secrets, HTTPS, backups, monitoring, and operational runbooks for a real host. The current Compose stack is for local development and is not a production deployment.
+- Add Kafka/Redis Testcontainers integration coverage. The PostgreSQL concurrency Testcontainers suite is part of the green GitHub CI verification; it was skipped in the local workspace because its Docker daemon was unavailable. Unit tests do not replace integration checks.
+- Configure deployment secrets, HTTPS, backups, monitoring, and operational runbooks for a real host. The current Compose stack is for local development and is not a production deployment.
 - The optional AI explanation adapter uses only masked rule context and is non-authoritative. Email delivery and external AI-provider behavior still need end-to-end validation.
 
 The optional VM deployment workflow is in `.github/workflows/deploy.yml` and is disabled by default. To enable it, configure the repository variable `DEPLOY_ENABLED=true` and secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_GHCR_USERNAME`, `DEPLOY_GHCR_TOKEN`, `PROD_DOMAIN`, `PROD_DB_PASSWORD`, `PROD_JWT_SECRET`, `PROD_ADMIN_EMAIL`, and `PROD_ADMIN_PASSWORD`. AI provider secrets are optional. Point the domain to the VM and allow inbound ports 80 and 443; Caddy obtains HTTPS certificates. Do not add real secrets to `.env.production.example` or commit `.env.production`.
