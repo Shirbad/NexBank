@@ -1,0 +1,11 @@
+target/
+.idea/
+*.iml
+.env
+secrets/
+coverage/
+*.log
+
+.tmp-*/
+nexbank-project.zip
+

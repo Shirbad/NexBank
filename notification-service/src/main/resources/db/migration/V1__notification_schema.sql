@@ -1,0 +1,3 @@
+CREATE TABLE notifications (id UUID PRIMARY KEY, user_id UUID NOT NULL, message TEXT NOT NULL, status VARCHAR(16) NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE audit_log (id UUID PRIMARY KEY, event_type VARCHAR(100) NOT NULL, payload JSONB NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE processed_events (event_id UUID PRIMARY KEY, processed_at TIMESTAMPTZ NOT NULL DEFAULT now());

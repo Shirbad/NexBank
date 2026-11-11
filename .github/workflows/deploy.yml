@@ -1,0 +1,66 @@
+name: Deploy NexBank to VM
+on:
+  workflow_run:
+    workflows: ["Publish container images"]
+    branches: [main, master]
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/nexbank_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/nexbank_deploy ~/.ssh/known_hosts
+      - name: Prepare production environment file
+        env:
+          DOMAIN: ${{ secrets.PROD_DOMAIN }}
+          DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.PROD_JWT_SECRET }}
+          ADMIN_EMAIL: ${{ secrets.PROD_ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.PROD_ADMIN_PASSWORD }}
+          AI_API_KEY: ${{ secrets.PROD_AI_API_KEY }}
+          AI_API_URL: ${{ secrets.PROD_AI_API_URL }}
+          AI_MODEL: ${{ secrets.PROD_AI_MODEL }}
+        run: |
+          cat > .env.production <<EOF
+          DOMAIN=$DOMAIN
+          DB_PASSWORD=$DB_PASSWORD
+          JWT_SECRET=$JWT_SECRET
+          ADMIN_EMAIL=$ADMIN_EMAIL
+          ADMIN_PASSWORD=$ADMIN_PASSWORD
+          AI_API_KEY=$AI_API_KEY
+          AI_API_URL=$AI_API_URL
+          AI_MODEL=$AI_MODEL
+          EOF
+          chmod 600 .env.production
+      - name: Copy release files to VM
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          target="$DEPLOY_USER@$DEPLOY_HOST"
+          ssh -i ~/.ssh/nexbank_deploy "$target" 'mkdir -p /opt/nexbank/docker/postgres'
+          scp -i ~/.ssh/nexbank_deploy docker-compose.prod.yml Caddyfile .env.production "$target:/opt/nexbank/"
+          scp -i ~/.ssh/nexbank_deploy docker/postgres/init.sql "$target:/opt/nexbank/docker/postgres/"
+      - name: Pull images and restart services
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GHCR_USERNAME: ${{ secrets.DEPLOY_GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.DEPLOY_GHCR_TOKEN }}
+        run: |
+          target="$DEPLOY_USER@$DEPLOY_HOST"
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/nexbank_deploy "$target" "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin"
+          ssh -i ~/.ssh/nexbank_deploy "$target" 'cd /opt/nexbank && docker compose --env-file .env.production -f docker-compose.prod.yml pull && docker compose --env-file .env.production -f docker-compose.prod.yml up -d --remove-orphans'

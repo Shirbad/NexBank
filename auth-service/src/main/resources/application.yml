@@ -1,0 +1,12 @@
+spring:
+  application.name: auth-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:nexbank}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa.hibernate.ddl-auto: validate
+  flyway.enabled: true
+server.port: ${SERVER_PORT:8081}
+jwt.secret: ${JWT_SECRET:}
+spring.data.redis.host: ${SPRING_DATA_REDIS_HOST:localhost}
+spring.data.redis.port: ${SPRING_DATA_REDIS_PORT:6379}

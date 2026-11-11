@@ -1,0 +1,6 @@
+CREATE TABLE accounts (id UUID PRIMARY KEY, account_number VARCHAR(24) NOT NULL UNIQUE, owner_user_id UUID NOT NULL, balance DECIMAL(19,2) NOT NULL DEFAULT 0 CHECK (balance >= 0), status VARCHAR(16) NOT NULL, version BIGINT NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE transfers (id UUID PRIMARY KEY, from_account_id UUID NOT NULL REFERENCES accounts(id), to_account_id UUID NOT NULL REFERENCES accounts(id), amount DECIMAL(19,2) NOT NULL CHECK (amount > 0), status VARCHAR(16) NOT NULL, idempotency_key VARCHAR(128) NOT NULL UNIQUE, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE ledger_entries (id UUID PRIMARY KEY, account_id UUID NOT NULL REFERENCES accounts(id), type VARCHAR(8) NOT NULL, amount DECIMAL(19,2) NOT NULL CHECK (amount > 0), balance_after DECIMAL(19,2) NOT NULL, transfer_id UUID REFERENCES transfers(id), created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX ledger_account_created_idx ON ledger_entries(account_id, created_at DESC);
+CREATE TABLE outbox_events (id UUID PRIMARY KEY, aggregate_id UUID NOT NULL, event_type VARCHAR(100) NOT NULL, payload JSONB NOT NULL, published BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE processed_events (event_id UUID PRIMARY KEY, processed_at TIMESTAMPTZ NOT NULL DEFAULT now());

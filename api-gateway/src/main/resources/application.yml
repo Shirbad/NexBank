@@ -1,0 +1,51 @@
+spring:
+  application.name: api-gateway
+  cloud.gateway:
+    routes:
+      - id: auth
+        uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+        predicates: [Path=/api/auth/**]
+      - id: auth-docs
+        uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+        predicates: [Path=/auth/v3/api-docs]
+        filters: [StripPrefix=1]
+      - id: admin-users
+        uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+        predicates: ["Path=/api/admin/users,/api/admin/users/**"]
+      - id: accounts
+        uri: ${ACCOUNT_SERVICE_URL:http://localhost:8082}
+        predicates: ["Path=/api/accounts/**,/api/transfers/**,/api/admin/accounts/**"]
+      - id: account-docs
+        uri: ${ACCOUNT_SERVICE_URL:http://localhost:8082}
+        predicates: [Path=/account/v3/api-docs]
+        filters: [StripPrefix=1]
+      - id: fraud
+        uri: ${FRAUD_SERVICE_URL:http://localhost:8083}
+        predicates: [Path=/api/fraud/**]
+      - id: fraud-docs
+        uri: ${FRAUD_SERVICE_URL:http://localhost:8083}
+        predicates: [Path=/fraud/v3/api-docs]
+        filters: [StripPrefix=1]
+      - id: notifications
+        uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+        predicates: [Path=/api/notifications/**]
+      - id: notification-docs
+        uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+        predicates: [Path=/notification/v3/api-docs]
+        filters: [StripPrefix=1]
+server.port: ${SERVER_PORT:8080}
+jwt.secret: ${JWT_SECRET:}
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    urls:
+      - name: Gateway
+        url: /v3/api-docs
+      - name: Auth Service
+        url: /auth/v3/api-docs
+      - name: Account Service
+        url: /account/v3/api-docs
+      - name: Fraud Service
+        url: /fraud/v3/api-docs
+      - name: Notification Service
+        url: /notification/v3/api-docs

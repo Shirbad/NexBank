@@ -1,0 +1,12 @@
+spring:
+  application.name: fraud-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fraud_db}
+    username: ${SPRING_DATASOURCE_USERNAME:nexbank}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa.hibernate.ddl-auto: validate
+  flyway.enabled: true
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer: { group-id: fraud-service, auto-offset-reset: earliest }
+server.port: ${SERVER_PORT:8083}
